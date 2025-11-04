@@ -2,17 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Lumen\Auth\Authorizable;
+use Illuminate\Support\Str;
 
-class User extends Model implements AuthenticatableContract, AuthorizableContract
+class User extends Model
 {
-    use Authenticatable, Authorizable, HasFactory;
+    use HasFactory;
 
+    protected $keyType="string";
+    public $incrementing=false;
     /**
      * The attributes that are mass assignable.
      *
@@ -28,6 +27,15 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var string[]
      */
     protected $hidden = [
-        'password',
+        'secret',
     ];
+    protected static function boot() {
+        parent::boot();
+
+        static::creating(function($model) {
+            if(empty($model->id)) {
+                $model->id=(string) Str::uuid();
+            }
+        });
+    }
 }
