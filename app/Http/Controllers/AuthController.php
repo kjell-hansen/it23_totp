@@ -20,7 +20,7 @@ class AuthController extends Controller {
         // Hämta användare via epost
         $user = $this->repo->getUserByEmail($email);
         if (!$user) {
-            return response()->json(['error' => 'Invalid credentials'], 401);
+            return response()->json(['error' => "Invalid credentials $email"], 401);
         }
 
         // Verifiera code
@@ -31,6 +31,9 @@ class AuthController extends Controller {
 
         $accessToken = $this->jwtService->createAccessToken($user->id);
         $refreshToken = $this->jwtService->createRefreshToken();
+
+        // Spara refreshtoken i databasen
+        $this->repo->saveRefreshToken($user->id, $refreshToken);
 
         // Sätt cookies
         $cookie = Cookie::create(
