@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\JwtService;
 use App\Services\TotpService;
 use App\Storage\UserRepository;
+use Carbon\Carbon;
 use \Symfony\Component\HttpFoundation\Cookie;
 use Illuminate\Http\Request;
 
@@ -31,15 +32,16 @@ class AuthController extends Controller {
 
         $accessToken = $this->jwtService->createAccessToken($user->id);
         $refreshToken = $this->jwtService->createRefreshToken();
+        $expiresAt = Carbon::now()->addDays(30)->format("Y-m-d H:i:s");
 
         // Spara refreshtoken i databasen
-        $this->repo->saveRefreshToken($user->id, $refreshToken);
+        $this->repo->saveRefreshToken($user->id, $refreshToken, $expiresAt);
 
         // Sätt cookies
         $cookie = Cookie::create(
             'refresh_token',
             $refreshToken,
-            60 * 60 * 24 * 30,
+            $expiresAt,
             'refresh',
             null,
             true,
@@ -49,14 +51,59 @@ class AuthController extends Controller {
         );
 
         return response()->json([
-            'access_token' => $accessToken,
-            'token_type' => 'Bearer',
-            'expires_in' => 900,
-            '$user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email
-            ]
-        ])->withCookie($cookie);
+                                    'access_token' => $accessToken,
+                                    'token_type' => 'Bearer',
+                                    'expires_in' => 900,
+                                    '$user' => [
+                                        'id' => $user->id,
+                                        'name' => $user->name,
+                                        'email' => $user->email
+                                    ]
+                                ])->withCookie($cookie);
+    }
+
+    public function refresh(Request $request) {
+        // Läs refreshtoken från cookie
+        $refreshToken = $request->cookie('refresh_token');
+
+        if (!$refreshToken) {
+            return response()->json(['error' => "Missing refreshtoken"], 401);
+        }
+
+        // Kontrollera att angivet token finns i databasen
+        $user = $this->repo->getUserByRefreshToken($refreshToken);
+        if (!$user) {
+            return response()->json(['error' => 'Invalid refreshtoken (no user)']);
+        }
+
+        // Skapa nya tokens för användaren
+        $accessToken = $this->jwtService->createAccessToken($user->id);
+        $newRefreshToken = $this->jwtService->createRefreshToken();
+        $expiresAt = Carbon::now()->addDays(30)->format("Y-m-d H:i:s");
+        $this->repo->saveRefreshToken($user->id, $newRefreshToken, $expiresAt);
+
+        // Sätt cookies
+        $cookie = Cookie::create(
+            'refresh_token',
+            $newRefreshToken,
+            $expiresAt,
+            'refresh',
+            null,
+            true,
+            true,
+            false,
+            'lax'
+        );
+
+        return response()->json([
+                                    'access_token' => $accessToken,
+                                    'token_type' => 'Bearer',
+                                    'expires_in' => 900,
+                                    '$user' => [
+                                        'id' => $user->id,
+                                        'name' => $user->name,
+                                        'email' => $user->email
+                                    ]
+                                ])->withCookie($cookie);
     }
 }

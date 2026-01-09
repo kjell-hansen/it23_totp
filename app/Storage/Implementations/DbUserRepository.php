@@ -17,13 +17,30 @@ class DbUserRepository implements UserRepository {
         return User::where('email', $email)->first();
     }
 
-    public function saveRefreshToken(string $user_id, string $refreshToken, DateTimeInterface $expiresAt = null):void {
-        $expiresAt = $expiresAt ?? Carbon::now()->addDays(30);
+    public function saveRefreshToken(string $user_id, string $refreshToken, string $expiresAt):void {
+        $hash=hash('sha256', $refreshToken);
 
         RefreshToken::create([
                                  'user_id' => $user_id,
-                                 'token_hash' => $refreshToken,
+                                 'token_hash' => $hash,
                                  'expires' => $expiresAt
                              ]);
+    }
+
+    public function getUserByRefreshToken(string $refreshtoken):?User {
+        $hash=hash('sha256', $refreshtoken);
+
+        $record=RefreshToken::where('token_hash', $hash)
+            ->where(function($q) {
+                $q->whereNull('expires')
+                    ->orWhere('expires', '>', date("Y-m-d H:i:s"));
+            })
+            ->first();
+
+        if(!$record) {
+            return null;
+        }
+
+        return User::find($record->user_id);
     }
 }

@@ -11,5 +11,7 @@ interface UserRepository {
     public function getUserByEmail(string $email):?User;
 
     public function saveRefreshToken(string $user_id , string $refreshToken,
-                                     DateTimeInterface $expiresAt = null):void;
+                                     string $expiresAt):void;
+
+    public function getUserByRefreshToken(string $refreshtoken):?User;
 }
