@@ -14,4 +14,6 @@ interface UserRepository {
                                      string $expiresAt):void;
 
     public function getUserByRefreshToken(string $refreshtoken):?User;
+
+    public function deleteRefreshToken(string $refreshToken);
 }
