@@ -57,4 +57,8 @@ class DbUserRepository implements UserRepository {
 
         RefreshToken::where('token_hash', $hash)->delete();
     }
+
+    public function deleteAllRefreshTokens(User $user) {
+        RefreshToken::where('user_id', $user->id)->delete();
+    }
 }

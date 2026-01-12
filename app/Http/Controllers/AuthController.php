@@ -132,4 +132,36 @@ class AuthController extends Controller {
             'expires_in'=>-1
         ], 204)->withoutCookie($cookie);
     }
+
+    public function logoutAll(Request $request) {
+        $refreshToken=$request->cookie('refresh_token');
+
+        if(!$refreshToken) {
+            return response()->json(['error'=>'Missing refreshtoken'],401);
+        }
+
+        $user=$this->repo->getUserByRefreshToken($refreshToken);
+        if(!$user) {
+            return response()->json(['error'=>'Missing refreshtoken'],401);
+        }
+
+        $this->repo->deleteAllRefreshTokens($user);
+        $cookie = Cookie::create(
+            'refresh_token',
+            null,
+            -1,
+            'refresh',
+            null,
+            true,
+            true,
+            false,
+            'lax'
+        );
+
+        // Returnera ett ogiltigt accesstoken och radera refresh_token-cookien
+        return response()->json([
+                                    'access_token'=>null,
+                                    'expires_in'=>-1
+                                ], 204)->withoutCookie($cookie);
+    }
 }
