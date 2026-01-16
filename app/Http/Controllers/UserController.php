@@ -24,7 +24,17 @@ class UserController extends Controller {
             $this->repo->add($user);
 
             $qr = TotpQrService::generateQrCode($user);
-            return View::make('mail', ['qr' => $qr]);
+            $content = View::make('mail', ['qr' => $qr]);
+/*
+ // Behöver tillgång till en mailserver för att kunna skicka mailet :(
+            mail(
+                $user->email,
+                'Grattis till registreringen!',
+                $content,
+                'MIME-version:1.0; Content-Type:text/html; charset=UTF-8'
+            );
+*/
+            return $content;
         } catch (UniqueConstraintViolationException $e) {
             return View::make('register', ['message' => 'User email exists']);
         }
