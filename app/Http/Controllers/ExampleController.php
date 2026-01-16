@@ -18,7 +18,8 @@ class ExampleController extends Controller
 
     public function protected(Request $request) {
         $retur=['Message'=>"Detta är en rutt som man behöver vara inloggad för",
-            'jwt'=>$request->jwt_payload];
+            'jwt'=>$request->attributes->get('jwt_payload'),
+            'user'=>$request->user()];
 
       return  response()->json($retur,200);
     }
@@ -26,9 +27,10 @@ class ExampleController extends Controller
     public function open(Request $request) {
         $retur=['Message'=>"Detta är en rutt som man inte behöver logga in för att komma åt"];
 
-        if($request->user) {
+        // Vi läser aldrig in användaren till request-objektet för öppna rutter
+/*        if($request->user) {
             $retur['user']=$request->user()->toJson();
-        }
+        }*/
 
        return response()->json($retur,200);
     }

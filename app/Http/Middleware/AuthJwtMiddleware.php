@@ -16,8 +16,8 @@ class AuthJwtMiddleware {
         }
 
         $token = substr($authHeader, 7); // Ta bort "Bearer " från headern
-
         $payload = $this->jwtService->validate($token);
+
         if (!$payload) {
             return response()->json(['Error' => '(Missing or) invalid token'], 401);
         }
